@@ -16,7 +16,7 @@ from task.userFollowingTask import UserFollowingTask
 from task.userHomeTask import UserHomeTask
 from task.userLikesTask import UserLikesTask
 from task.userMediaTask import UserMediaTask
-
+import random
 
 def cmdMode(clearScreen=True):
     if clearScreen:
@@ -228,7 +228,7 @@ def urlHandler(url: str):
     cfg = {'media': getContext('media'), 'quoted': getContext(
         'quoted'), 'retweeted': getContext('retweeted')}
 
-    # singlePage
+    # g
     twt_link = p_twt_link.findall(url)
     if twt_link:
         userName = twt_link[0][0]

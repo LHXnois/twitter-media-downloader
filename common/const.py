@@ -33,7 +33,7 @@ context = {
     'updateInfo': {'LastCheckDate': '', 'tagName': '', 'name': ''},
     'concurrency': 8,
     'type': 'photo&animated_gif&video&full_text',
-    'fileName': '{userName}-{twtId}-{date}_{time}-{type}',
+    'fileName': '{date}-{type}',
     'quoted': True,
     'retweeted': True,
     'media': True  # 是否包含非媒体(纯文本)推文
@@ -59,7 +59,7 @@ userInfoApi = 'https://twitter.com/i/api/graphql/Vf8si2dfZ1zmah8ePYPjDQ/UserBySc
 userLikesApi = 'https://api.twitter.com/graphql/nYrjBgnUWQFt_tRyCGatZA/Likes'
 userFollowingApi = 'https://api.twitter.com/graphql/fzE3zNMTkr-CJufrDwjC4A/Following'
 userHomeApi = 'https://api.twitter.com/graphql/CkON7wJrKLwEVV59ClcmjA/UserTweets'
-userMediaApi = 'https://api.twitter.com/graphql/YcKL-v9RI2t42QCEDfv-9g/UserMedia'
+userMediaApi = 'twitter.com/i/api/graphql/dQAjBEzWOl_hQwnc1sLUsA/UserMedia'
 checkUpdateApi = 'https://api.github.com/repos/mengzonefire/twitter-media-downloader/releases/latest'
 
 # api parameter

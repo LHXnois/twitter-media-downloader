@@ -42,7 +42,6 @@ class UserMediaTask(Task):
                             return False
                         else:
                             print(timeout_warning.format(i))
-                            time.sleep(1)
             if not response:
                 self.stopGetDataList()
                 return

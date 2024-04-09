@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2023/1/13 19:27
 # @Author  : 178
+import random
 import time
 import httpx
 
@@ -52,3 +53,4 @@ class UserHomeTask(Task):
             cursor, rest_id_list = self.parseData(cursor, rest_id_list)
             if not cursor:
                 break
+            time.sleep(random.random() * 10 + 3)

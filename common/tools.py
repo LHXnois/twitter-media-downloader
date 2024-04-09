@@ -5,16 +5,18 @@ LastEditTime: 2023-03-15 00:51:19
 LastEditors: mengzonefire
 Description: 工具模块, 快1k行了, 抽空分模块拆分一下
 '''
+import argparse
 import json
+import queue
 import sys
 import time
-import queue
+from argparse import RawTextHelpFormatter
+
 import httpx
-import argparse
-from common.text import *
 from common.const import *
 from common.logger import writeLog
-from argparse import RawTextHelpFormatter
+from common.text import *
+
 isWinPlatform = sys.platform in ['win32', 'win64']
 if isWinPlatform:
     import winreg
@@ -109,7 +111,6 @@ def getGuestCookie():  # 获取游客token
                     return False
                 else:
                     print(timeout_warning.format(i))
-                    time.sleep(1)
     if 'guest_token' in response:
         x_guest_token = response['guest_token']
         headers['x-guest-token'] = x_guest_token
@@ -226,7 +227,7 @@ def saveEnv():
     conf.set("global", "updateinfo", getContext("updateInfo"))
     conf.set("global", "concurrency", getContext("concurrency"))
     conf.set("global", "type", getContext("type"))
-    conf.set("global", "fileName", getContext("fileName"))
+    conf.set("global", "filename", getContext("fileName"))
     conf.set("global", "quoted", getContext("quoted"))
     conf.set("global", "retweeted", getContext("retweeted"))
     conf.set("global", "media", getContext("media"))
@@ -261,7 +262,7 @@ def getEnv():
                     setContext('concurrency', int(item[1]))
                 elif item[0] == 'type' and item[1]:
                     setContext('type', item[1])
-                elif item[0] == 'fileName' and item[1]:
+                elif item[0] == 'filename' and item[1]:
                     setContext('fileName', item[1])
                 elif item[0] == 'media' and item[1]:
                     setContext('media', eval(item[1]))
@@ -294,7 +295,6 @@ def getUserId(userName: str) -> int | None:
                     return False
                 else:
                     print(timeout_warning.format(i))
-                    time.sleep(1)
     if response.status_code != httpx.codes.OK:
         print(http_warning.format('getUserId',
                                   response.status_code, getHttpText(response.status_code)))
@@ -317,8 +317,6 @@ param {str} filePath 下载文件路径
 param {str} fileName 文件名
 return {bool} True下载成功, False下载失败
 '''
-
-
 def downloader(client, url: str, filePath: str, fileName: str) -> bool:
     for _ in range(1, 6):
         try:
@@ -333,9 +331,8 @@ def downloader(client, url: str, filePath: str, fileName: str) -> bool:
                             f.write(chunk)
                 os.rename(f'{filePath}.cache', filePath)
                 return True
-        except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.ConnectError, httpx.RemoteProtocolError):
-            # print(download_timeout_warning.format(fileName, '正在重试...', i))
-            time.sleep(1)
+        #except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.ConnectError, httpx.RemoteProtocolError):
+        # print(download_timeout_warning.format(fileName, '正在重试...', i))
         except Exception as e:
             print(download_warning.format(e))
     print(download_timeout_warning.format(fileName, '失败次数过多...', ''))
@@ -590,11 +587,15 @@ def parseData(pageContent, total, userName, dataList, cfg, rest_id_list, cursor)
         media_type = getContext('type').split('&')
         if includeQuoted:  # 包括引用，如 https://twitter.com/Liyu0109/status/1611734998402633728
             # 判断是否有引用，以及引用是否能查看，搜索接口的引用tweet直接在tweet_list里面，其他接口则嵌套在result里面
-            if 'quoted_status_result' in result and 'legacy' in result['quoted_status_result']['result']:
-                _userName = result['quoted_status_result']['result']['core']['user_results']['result']['legacy']['screen_name']
-                twtId = result['quoted_status_result']['result']['rest_id']
-                legacy = result['quoted_status_result']['result']['legacy']
-                legacylist.append([_userName, twtId, legacy])
+            try:
+                if 'quoted_status_result' in result and 'legacy' in result['quoted_status_result']['result']:
+                    _userName = result['quoted_status_result']['result']['core']['user_results']['result']['legacy']['screen_name']
+                    twtId = result['quoted_status_result']['result']['rest_id']
+                    legacy = result['quoted_status_result']['result']['legacy']
+                    legacylist.append([_userName, twtId, legacy])
+            except KeyError:
+                print("KEYERROR EXCEPTION")
+
         else:
             # 搜索接口, userName为空(@&advanced=)时忽略引用过滤
             if 'quoted_status_id_str' in result and userName and userName != _userName:

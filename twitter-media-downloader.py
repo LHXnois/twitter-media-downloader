@@ -9,7 +9,7 @@ Description: 主函数入口
 import traceback
 from common.console import cmdMode, startCrawl
 from common.tools import *
-
+import random
 
 def main():
     exe_path, _ = os.path.split(sys.argv[0])
