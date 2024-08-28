@@ -6,7 +6,9 @@ dist
 build
 log
 twitter_media_download
+downloads
 sample
 test
 venv
 .vscode
+temp.json

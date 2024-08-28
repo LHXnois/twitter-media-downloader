@@ -104,7 +104,7 @@ class Task(object):
         self.stop = True
         t1.join()
         t2.join()
-        if self.total.qsize():
+        if self.total.qsize() :
             print(task_finish.format(self.done.qsize(), self.total.qsize(),
                                      round(time.perf_counter() - start, 1), self.savePath))
         elif self.pageContent and not self.errFlag:

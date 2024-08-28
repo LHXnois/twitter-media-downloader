@@ -34,7 +34,8 @@ class UserMediaTask(Task):
                     try:
                         response = client.get(userMediaApi, params={
                             'variables': userMediaApiPar.format(self.userId, twtCount, cursorPar),
-                            'features': commonApiPar})
+                            'features': commonApiPar,'fieldToggles': fieldToggles})
+                        # print(response.request.url)
                         break
                     except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.ConnectError, httpx.RemoteProtocolError):
                         if i >= 5:

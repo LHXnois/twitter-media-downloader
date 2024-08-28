@@ -32,7 +32,8 @@ class UserHomeTask(Task):
                     try:
                         response = client.get(userHomeApi, params={
                             'variables': userHomeApiPar.format(self.userId, twtCount, cursorPar),
-                            'features': commonApiPar})
+                            'features': commonApiPar
+                            })
                         break
                     except (httpx.ConnectTimeout, httpx.ReadTimeout, httpx.ConnectError, httpx.RemoteProtocolError):
                         if i >= 5:
@@ -42,7 +43,8 @@ class UserHomeTask(Task):
                             print(timeout_warning.format(i))
                             time.sleep(1)
             if not response:
-                self.stopGetDataList()
+                print("no response")
+                # self.stopGetDataList()
                 return
             if response.status_code != httpx.codes.OK:
                 print(http_warning.format('UserHomeTask.getDataList',
@@ -52,5 +54,6 @@ class UserHomeTask(Task):
             self.pageContent = response.json()
             cursor, rest_id_list = self.parseData(cursor, rest_id_list)
             if not cursor:
+                print("no cursor")
                 break
             time.sleep(random.random() * 10 + 3)

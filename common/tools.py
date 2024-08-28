@@ -353,7 +353,7 @@ def downloadFile(savePath: str, dataList: queue.Queue, done: queue.Queue):
             break
     while True:
         try:
-            datalist = dataList.get(timeout=30)
+            datalist = dataList.get(timeout=3000)
             dataList.task_done()
         except queue.Empty:
             print(queue_empty_warning)
@@ -420,27 +420,36 @@ def getResult(tweet):
         (result['tweet'] if result['__typename'] == 'TweetWithVisibilityResults' else
          ({'errText': result['tombstone']['text']['text']} if result['__typename'] == 'TweetTombstone' else None))
     if 'entryId' not in tweet:
-        return tweet
-    if tweet['content']['entryType'] == 'TimelineTimelineItem':
-        # SelfThread -> singlePageTask
-        if 'tweetDisplayType' in tweet['content']['itemContent'] and \
-                tweet['content']['itemContent']['tweetDisplayType'] in ['Tweet', 'SelfThread']:
-            result = getresult(
-                tweet['content']['itemContent']['tweet_results']['result'])
-            return result
-        else:
-            return None
-    elif tweet['content']['entryType'] == 'TimelineTimelineModule':
-        if 'tweetDisplayType' in tweet['content'] and \
-                tweet['content']['tweetDisplayType'] == 'VerticalConversation':
-            result = getresult(tweet['content']['items']
-                               [-1]['item']['tweet_results']['result'])
-            return result
-        else:
-            return None
-    else:
-        return None
 
+        return tweet
+    if 'item' in tweet:
+        if tweet['item']['itemContent']['__typename'] == 'TimelineTweet':
+            result = tweet['item']['itemContent']['tweet_results']['result']
+
+            return getresult(result)
+    else:
+        if tweet['content']['entryType'] == 'TimelineTimelineItem':
+            # SelfThread -> singlePageTask
+            if 'tweetDisplayType' in tweet['content']['itemContent'] and \
+                    tweet['content']['itemContent']['tweetDisplayType'] in ['Tweet', 'SelfThread']:
+                result = getresult(
+                    tweet['content']['itemContent']['tweet_results']['result'])
+                assert result.get('rest_id') or result.get('id_str')
+                return result
+            else:
+                return None
+        elif tweet['content']['entryType'] == 'TimelineTimelineModule':
+            if 'tweetDisplayType' in tweet['content'] and \
+                    tweet['content']['tweetDisplayType'] == 'VerticalConversation':
+                result = getresult(tweet['content']['items']
+                                   [-1]['item']['tweet_results']['result'])
+                assert result.get('rest_id') or result.get('id_str')
+                return result
+            else:
+                return None
+
+        else:
+            return None
 
 '''
 description: 从列表api元数据解析follow用户名列表
@@ -510,12 +519,17 @@ def getTweet(pageContent, cursor=None, isfirst=False):
         elif not result['timeline_v2']:
             print(need_cookie_warning)
             return None, None
+        entries=[]
         instructions = result['timeline_v2']['timeline']['instructions']
         for instruction in instructions:
-            if instruction['type'] == 'TimelineAddEntries':
-                entries = instruction['entries']
-                cursor = entries[-1]['content']['value'] if len(
-                    entries) != 0 else None
+            if  instruction['type'] == 'TimelineAddToModule':
+                entries+=instruction['moduleItems']
+
+            if instruction['type'] == 'TimelineAddEntries' :
+                entry = instruction['entries']
+                cursor = entry[-1]['content']['value'] if len(
+                    entry) != 0 else None
+                entries+=entry
                 break
     elif 'threaded_conversation_with_injections_v2' in pageContent['data']:
         entries = pageContent['data']['threaded_conversation_with_injections_v2']['instructions'][0]['entries']
@@ -525,11 +539,19 @@ def getTweet(pageContent, cursor=None, isfirst=False):
         return None, None
     tweets = []
     for tweet in entries:
-        if 'entryId' in tweet and 'tweet-' in tweet['entryId']:
-            tweets.append(tweet)
-        elif 'entryId' not in tweet:
-            tweets.append(tweet)
+        if 'entryId' in tweet and 'profile-grid-' in tweet['entryId']:
+            if 'content' in tweet:
+                for item in tweet['content']['items']:
+                    if 'entryId' in tweet and 'tweet-' in item['entryId']:
+                        tweets.append(item)
+                    elif 'entryId' not in item:
+                        tweets.append(item)
+            elif 'item' in tweet:
+                tweets.append(tweet)
+        # elif 'content' in tweet and 'Bottom'==tweet['content']['cursorType']:
+        #     cursor = tweet['content']['value']
     return tweets, cursor
+
 
 
 '''
@@ -548,9 +570,9 @@ dataList数据结构：
 
 
 def parseData(pageContent, total, userName, dataList, cfg, rest_id_list, cursor):
-    includeNonMedia = cfg['media']
-    includeRetweeted = cfg['retweeted']
-    includeQuoted = cfg['quoted']
+    includeNonMedia = cfg['media']and False
+    includeRetweeted = cfg['retweeted'] and False
+    includeQuoted = cfg['quoted']and False
     if cursor:
         tweet_list, cursor = getTweet(pageContent)
     else:
